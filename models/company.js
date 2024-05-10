@@ -73,9 +73,9 @@ class Company {
     const values = [];
 
     // Check if a name filter is provided
-    if (queryParams.name) {
-      values.push(`%${queryParams.name}%`);
-      query += `WHERE name ILIKE $${values.length}`;
+    if (queryParams.nameLike) {
+      values.push(`%${queryParams.nameLike}%`);
+      conditions.push(`name ILIKE $${values.length}`);
     }
     // Check if a minimum employee filter is provided
     if (queryParams.minEmployees) {
