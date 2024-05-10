@@ -49,7 +49,6 @@ class Company {
    * */
 
   static async findAll({ queryParams }) {
-    console.log(queryParams);
     // Check if a both min and max filter is provided
     if (queryParams.minEmployees && queryParams.maxEmployees) {
       // check If the minEmployees parameter is greater than the maxEmployees parameter
