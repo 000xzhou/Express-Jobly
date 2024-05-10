@@ -80,6 +80,7 @@ async function commonAfterAll() {
 }
 
 const u1Token = createToken({ username: "u1", isAdmin: false });
+const u2Token = createToken({ username: "u2", isAdmin: false });
 const a1TokenAdmin = createToken({ username: "a1", isAdmin: true });
 
 module.exports = {
@@ -89,4 +90,5 @@ module.exports = {
   commonAfterAll,
   u1Token,
   a1TokenAdmin,
+  u2Token,
 };
