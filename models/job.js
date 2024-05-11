@@ -78,7 +78,7 @@ class Job {
     }
     // Append ORDER BY clause
     query += ` ORDER BY title`;
-    console.log(query);
+
     const jobsRes = await db.query(query, values);
     return jobsRes.rows;
   }
