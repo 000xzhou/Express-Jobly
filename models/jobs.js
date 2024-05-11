@@ -17,9 +17,21 @@ class Job {
    *
    * Returns { id, title, salary, equity, company_handle }
    *
+   * Throws BadRequestError if duplicate.
+   *
    * */
 
   static async create({ title, salary, equity, company_handle }) {
+    // Check for duplicates
+    const dupCheck = await db.query(
+      `SELECT * FROM jobs WHERE title = $1 AND salary=$2 AND equity=$3 AND company_handle = $4`,
+      [title, salary, equity, company_handle]
+    );
+    if (dupCheck.rows.length > 0) {
+      throw new BadRequestError("Duplicate job posting for this company.");
+    }
+
+    // create new job
     const result = await db.query(
       `INSERT INTO jobs
            (title, salary, equity, company_handle)
@@ -28,19 +40,18 @@ class Job {
       [title, salary, equity, company_handle]
     );
     const job = result.rows[0];
-
     return job;
   }
 
   /** Find all jobs.
    *
    * Returns [{ id, title, salary, equity, company_handle }, ...]
+   *
    * */
 
   static async findAll({ queryParams }) {
     // Start building the query string
-    let query = `SELECT id, title, salary, equity, company_handle
-           FROM jobs`;
+    let query = `SELECT id, title, salary, equity, company_handle FROM jobs`;
 
     let conditions = [];
     const values = [];
@@ -55,19 +66,10 @@ class Job {
       values.push(queryParams.minSalary);
       conditions.push(`salary >= $${values.length}`);
     }
-
-    // Check if a hasEquity filter is provided
-    if (queryParams.hasEquity) {
-      if (queryParams.hasEquity === "true") {
-        // Only include entries with positive equity
-        conditions.push(`equity > 0`);
-      } else if (queryParams.hasEquity === "false") {
-        // Only include entries where equity is exactly zero
-        conditions.push(`equity = 0`);
-      }
-    } else {
-      // If hasEquity is not provided, also show entries where equity is zero
-      conditions.push(`equity = 0`);
+    // Check if a equity filter is provided
+    if (queryParams.equity) {
+      // Only include entries with positive equity (non-zero amount of equity)
+      conditions.push(`equity > 0`);
     }
 
     // Append WHERE clause if there are any conditions
@@ -83,23 +85,45 @@ class Job {
 
   /** Given a job id, return data about jobs.
    *
-   * Returns { id, title, salary, equity, company_handle, companies }
+   * Returns { id, title, salary, equity, companies }
    *   where companies is [{ handle, name, description, numEmployees, logoUrl }, ...]
    *
    * Throws NotFoundError if not found.
    **/
 
-  static async get(id) {
+  static async get(idData) {
     const jobRes = await db.query(
-      `SELECT id, title, salary, equity, company_handle
-           FROM jobs
+      `SELECT j.id, j.title, j.salary, j.equity, c.handle, c.name, c.description, c.num_employees, c.logo_url
+           FROM jobs as j
+           LEFT JOIN companies as c
+           ON j.company_handle = c.handle
            WHERE id = $1`,
-      [id]
+      [idData]
     );
 
-    const job = jobRes.rows[0];
+    if (jobRes.rows.length === 0)
+      throw new NotFoundError(`No job found: ${idData}`);
 
-    if (!job) throw new NotFoundError(`No job: ${handle}`);
+    const { id, title, salary, equity } = jobRes.rows[0];
+    const job = {
+      id: id,
+      title: title,
+      salary: salary,
+      equity: equity,
+      companies: [],
+    };
+
+    jobRes.rows.forEach((row) => {
+      if (row.handle) {
+        job.companies.push({
+          handle: row.handle,
+          name: row.name,
+          description: row.description,
+          numEmployees: row.num_employees,
+          logoUrl: row.logo_url,
+        });
+      }
+    });
 
     return job;
   }
