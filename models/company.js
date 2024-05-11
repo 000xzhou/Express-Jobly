@@ -108,21 +108,48 @@ class Company {
    * Throws NotFoundError if not found.
    **/
 
-  static async get(handle) {
+  static async get(handleData) {
     const companyRes = await db.query(
-      `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
+      `SELECT c.handle,
+                  c.name,
+                  c.description,
+                  c.num_employees,
+                  c.logo_url,
+                  j.id, j.title, j.salary, j.equity, j.company_handle
+           FROM companies as c
+           LEFT JOIN jobs as j
+           ON c.handle = j.company_handle
            WHERE handle = $1`,
-      [handle]
+      [handleData]
     );
 
-    const company = companyRes.rows[0];
+    if (companyRes.rows.length === 0)
+      throw new NotFoundError(`No company: ${handleData}`);
 
-    if (!company) throw new NotFoundError(`No company: ${handle}`);
+    const { handle, name, description, num_employees, logo_url } =
+      companyRes.rows[0];
+
+    // seting up return  data
+    const company = {
+      handle: handle,
+      name: name,
+      description: description,
+      numEmployees: num_employees,
+      logoUrl: logo_url,
+      jobs: [],
+    };
+    // pushing job into company.jobs array
+    companyRes.rows.forEach((row) => {
+      if (row.id) {
+        company.jobs.push({
+          id: row.id,
+          title: row.title,
+          salary: row.salary,
+          equity: row.equity,
+          companyHandle: row.company_handle,
+        });
+      }
+    });
 
     return company;
   }
