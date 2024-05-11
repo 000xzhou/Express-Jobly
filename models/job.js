@@ -67,7 +67,7 @@ class Job {
       conditions.push(`salary >= $${values.length}`);
     }
     // Check if a equity filter is provided
-    if (queryParams.equity) {
+    if (queryParams.equity && queryParams.equity === "true") {
       // Only include entries with positive equity (non-zero amount of equity)
       conditions.push(`equity > 0`);
     }
@@ -78,7 +78,7 @@ class Job {
     }
     // Append ORDER BY clause
     query += ` ORDER BY title`;
-
+    console.log(query);
     const jobsRes = await db.query(query, values);
     return jobsRes.rows;
   }
