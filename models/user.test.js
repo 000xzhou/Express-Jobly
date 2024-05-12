@@ -113,17 +113,19 @@ describe("findAll", function () {
     expect(users).toEqual([
       {
         username: "u1",
-        firstName: "U1F",
-        lastName: "U1L",
+        first_name: "U1F",
+        last_name: "U1L",
         email: "u1@email.com",
-        isAdmin: false,
+        is_admin: false,
+        job_ids: [null],
       },
       {
         username: "u2",
-        firstName: "U2F",
-        lastName: "U2L",
+        first_name: "U2F",
+        last_name: "U2L",
         email: "u2@email.com",
-        isAdmin: false,
+        is_admin: false,
+        job_ids: [null],
       },
     ]);
   });
@@ -136,10 +138,11 @@ describe("get", function () {
     let user = await User.get("u1");
     expect(user).toEqual({
       username: "u1",
-      firstName: "U1F",
-      lastName: "U1L",
+      first_name: "U1F",
+      last_name: "U1L",
       email: "u1@email.com",
-      isAdmin: false,
+      is_admin: false,
+      job_ids: [null],
     });
   });
 
@@ -214,8 +217,7 @@ describe("update", function () {
 describe("remove", function () {
   test("works", async function () {
     await User.remove("u1");
-    const res = await db.query(
-        "SELECT * FROM users WHERE username='u1'");
+    const res = await db.query("SELECT * FROM users WHERE username='u1'");
     expect(res.rows.length).toEqual(0);
   });
 
