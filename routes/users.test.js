@@ -5,6 +5,7 @@ const request = require("supertest");
 const db = require("../db.js");
 const app = require("../app");
 const User = require("../models/user");
+const Job = require("../models/job");
 
 const {
   commonBeforeAll,
@@ -135,31 +136,35 @@ describe("GET /users", function () {
       users: [
         {
           username: "a1",
-          firstName: "A1F",
-          lastName: "A1L",
+          first_name: "A1F",
+          last_name: "A1L",
           email: "admin1@user.com",
-          isAdmin: true,
+          is_admin: true,
+          job_ids: [null],
         },
         {
           username: "u1",
-          firstName: "U1F",
-          lastName: "U1L",
+          first_name: "U1F",
+          last_name: "U1L",
           email: "user1@user.com",
-          isAdmin: false,
+          is_admin: false,
+          job_ids: [null],
         },
         {
           username: "u2",
-          firstName: "U2F",
-          lastName: "U2L",
+          first_name: "U2F",
+          last_name: "U2L",
           email: "user2@user.com",
-          isAdmin: false,
+          is_admin: false,
+          job_ids: [null],
         },
         {
           username: "u3",
-          firstName: "U3F",
-          lastName: "U3L",
+          first_name: "U3F",
+          last_name: "U3L",
           email: "user3@user.com",
-          isAdmin: false,
+          is_admin: false,
+          job_ids: [null],
         },
       ],
     });
@@ -199,10 +204,11 @@ describe("GET /users/:username", function () {
     expect(resp.body).toEqual({
       user: {
         username: "u1",
-        firstName: "U1F",
-        lastName: "U1L",
+        first_name: "U1F",
+        last_name: "U1L",
         email: "user1@user.com",
-        isAdmin: false,
+        is_admin: false,
+        job_ids: [null],
       },
     });
   });
@@ -213,10 +219,11 @@ describe("GET /users/:username", function () {
     expect(resp.body).toEqual({
       user: {
         username: "u1",
-        firstName: "U1F",
-        lastName: "U1L",
+        first_name: "U1F",
+        last_name: "U1L",
         email: "user1@user.com",
-        isAdmin: false,
+        is_admin: false,
+        job_ids: [null],
       },
     });
   });
@@ -367,5 +374,82 @@ describe("DELETE /users/:username", function () {
       .delete(`/users/nope`)
       .set("authorization", `Bearer ${a1TokenAdmin}`);
     expect(resp.statusCode).toEqual(404);
+  });
+});
+
+/************************************** POST /users/:username/jobs/:id */
+
+describe("POST /users/:username/jobs/:id", function () {
+  test("works for admins: apply for job for user", async function () {
+    let job = await Job.create({
+      title: "j200",
+      salary: 321,
+      equity: 0,
+      company_handle: "c1",
+    });
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${job.id}`)
+      .set("authorization", `Bearer ${a1TokenAdmin}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      job: {
+        job_id: expect.any(Number),
+      },
+    });
+    const getUser = await request(app)
+      .get(`/users/u1`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(getUser.body).toEqual({
+      user: {
+        username: "u1",
+        first_name: "U1F",
+        last_name: "U1L",
+        email: "user1@user.com",
+        is_admin: false,
+        job_ids: [expect.any(Number)],
+      },
+    });
+  });
+  test("works for user: apply for job", async function () {
+    let job = await Job.create({
+      title: "j200",
+      salary: 321,
+      equity: 0,
+      company_handle: "c1",
+    });
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${job.id}`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(200);
+    expect(resp.body).toEqual({
+      job: {
+        job_id: expect.any(Number),
+      },
+    });
+    const getUser = await request(app)
+      .get(`/users/u1`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(getUser.body).toEqual({
+      user: {
+        username: "u1",
+        first_name: "U1F",
+        last_name: "U1L",
+        email: "user1@user.com",
+        is_admin: false,
+        job_ids: [expect.any(Number)],
+      },
+    });
+  });
+  test("don't work if user don't match", async function () {
+    let job = await Job.create({
+      title: "j200",
+      salary: 321,
+      equity: 0,
+      company_handle: "c1",
+    });
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${job.id}`)
+      .set("authorization", `Bearer ${u2Token}`);
+    expect(resp.statusCode).toEqual(401);
   });
 });
