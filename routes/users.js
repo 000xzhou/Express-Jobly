@@ -127,12 +127,12 @@ router.delete("/:username", ensureRightUser, async function (req, res, next) {
  *
  * Returns { applied: jobId }
  *
- * Authorization required: login
+ * Authorization required: right user and admin
  **/
 
 router.post(
   "/:username/jobs/:id",
-  ensureLoggedIn,
+  ensureRightUser,
   async function (req, res, next) {
     try {
       const job = await User.applyForJob(req.params.username, req.params.id);
